@@ -1,34 +1,36 @@
 const { PrismaClient } = require('../../generated/prisma');
-const pool = require('../config/db')
-const bcrypt = require("bcrypt")
-const validator = require('validator')
-const jwt = require('jsonwebtoken')
+const pool = require('../config/db');
+const bcrypt = require('bcrypt');
+const validator = require('validator');
+const jwt = require('jsonwebtoken');
 
-const prisma = new PrismaClient()
+const prisma = new PrismaClient();
 
 exports.getUser = (req, res, next) => {
-	const user1 = {
-		nama: "Faizul",
-		asal: "Sumbawa",
-		pekerjaan: "Software Developer"
-	}
+  const user1 = {
+    nama: 'Faizul',
+    asal: 'Sumbawa',
+    pekerjaan: 'Software Developer',
+  };
 
   res.send(user1);
 };
 
 exports.createUser = async (req, res, next) => {
-	try {
-		const { username, password } = req.body;
+  try {
+    const { username, password } = req.body;
 
     if (!username || !password) {
       const err = new Error('Username dan password harus diisi.');
-			err.status = 400;
+      err.status = 400;
       throw err;
     }
 
-    const strongPass = validator.isStrongPassword(password)
+    const strongPass = validator.isStrongPassword(password);
     if (!strongPass) {
-      const err = new Error('Password harus minimal 8 karakter (termasuk huruf besar, huruf kecil, angka, dan simbol).');
+      const err = new Error(
+        'Password harus minimal 8 karakter (termasuk huruf besar, huruf kecil, angka, dan simbol).'
+      );
       err.status = 400;
       throw err;
     }
@@ -39,9 +41,9 @@ exports.createUser = async (req, res, next) => {
     // );
     const existUser = await prisma.user.findUnique({
       where: {
-        username
-      }
-    })
+        username,
+      },
+    });
 
     if (existUser) {
       const err = new Error('Username sudah terdaftar');
@@ -58,50 +60,49 @@ exports.createUser = async (req, res, next) => {
       data: {
         username: username,
         password: passwordHash,
-        role_id: 2
-      }
-    })
+        role_id: 2,
+      },
+    });
 
     return res.status(201).json({
       message: 'User berhasil terdaftar',
       data: {
         ...result,
         id: result.id.toString(),
-        role_id: result.role_id.toString()
+        role_id: result.role_id.toString(),
       },
     });
-	} catch (error) {
-		next(error)
-	}
-}
+  } catch (error) {
+    next(error);
+  }
+};
 
 exports.createRole = async (req, res, next) => {
   try {
-    const {role_name} = req.body
+    const { role_name } = req.body;
     if (!role_name) {
-      const err = new Error("Role name is required")
-      err.status = 400
-      throw err
+      const err = new Error('Role name is required');
+      err.status = 400;
+      throw err;
     }
 
     const result = await prisma.role.create({
       data: {
-        name: role_name
-      }
-    })
+        name: role_name,
+      },
+    });
 
     return res.status(201).json({
-      message: "Berhasil create role",
-      data: 
-      {
+      message: 'Berhasil create role',
+      data: {
         ...result,
-        id: result.id.toString()
-      }
-    })
+        id: result.id.toString(),
+      },
+    });
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
 
 exports.login = async (req, res, next) => {
   try {
@@ -117,7 +118,7 @@ exports.login = async (req, res, next) => {
       where: {
         username,
       },
-      include: {role: true}
+      include: { role: true },
     });
 
     if (!result) {
@@ -126,15 +127,22 @@ exports.login = async (req, res, next) => {
       throw err;
     }
 
-    const isValidPassword = await bcrypt.compare(password, result.password)
+    const isValidPassword = await bcrypt.compare(password, result.password);
     if (!isValidPassword) {
       const err = new Error('Password yang anda masukkan salah.');
       err.status = 401;
       throw err;
     }
 
-    const token = jwt.sign({id: result.id.toString(), username: result.username, role: result.role.name}, process.env.JWT_SECRET, {expiresIn: "1h"})
-
+    const token = jwt.sign(
+      {
+        id: result.id.toString(),
+        username: result.username,
+        role: result.role.name,
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '1h' }
+    );
 
     return res.status(200).json({
       message: 'User Berhasil Login',
@@ -145,18 +153,18 @@ exports.login = async (req, res, next) => {
         role: result.role
           ? { ...result.role, id: result.role.id.toString() }
           : null,
-        token: token
+        token: token,
       },
     });
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
 
 exports.updateUser = async (req, res, next) => {
   try {
-    const {id} = req.user
-    const {username} = req.body
+    const { id } = req.user;
+    const { username } = req.body;
 
     if (!username || !id) {
       const err = new Error('Username harus diisi.');
@@ -178,12 +186,12 @@ exports.updateUser = async (req, res, next) => {
 
     const result = await prisma.user.update({
       where: {
-        id
+        id,
       },
       data: {
-        username: username
-      }
-    })
+        username: username,
+      },
+    });
 
     return res.status(201).json({
       username: result.username,
@@ -191,15 +199,15 @@ exports.updateUser = async (req, res, next) => {
       role_id: result.role_id.toString(),
     });
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
 
 exports.deleteUser = async (req, res, next) => {
   try {
-    const {id, role} = req.user
+    const { id, role } = req.user;
 
-    if (role !== "admin") {
+    if (role !== 'admin') {
       const err = new Error('Hanya admin yang boleh menghapus user.');
       err.status = 400;
       throw err;
@@ -219,15 +227,15 @@ exports.deleteUser = async (req, res, next) => {
 
     await prisma.user.delete({
       where: {
-        id
-      }
-    })
+        id,
+      },
+    });
 
     return res.status(200).json({
-      message: "user berhasil dihapus",
-      data: null
-    })
+      message: 'user berhasil dihapus',
+      data: null,
+    });
   } catch (error) {
-    next(error)
+    next(error);
   }
-}
+};
