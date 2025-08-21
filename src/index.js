@@ -1,28 +1,50 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const compression = require('compression');
 
 //import router
 const router = require('./routes/router');
-const userRouter = require('./routes/userRouter');
+const userRouter = require('./routes/userRouter')
+const todoRouter = require('./routes/todoRouter')
+const uploadRouter = require("./routes/uploadRouter")
 
-//iport custome middleware
-const { logger } = require('./middlewares/logger');
+//import custom middleware
+const {logger} = require('./middlewares/logger');
 
+//inisiasi instance express dalam variabel app
 const app = express();
 
-//use middleware
+//use middlewares
 app.use(logger);
+app.use('/static', express.static('public'));
+app.use(compression())
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 app.use(cors({ origin: true, credentials: true }));
 
-app.use(logger);
-
 app.use('/', router);
-app.use('/api/user', userRouter);
+app.use('/api/user', userRouter)
+app.use('/api/todo', todoRouter)
+app.use('/api/upload', uploadRouter)
 
-app.listen(process.env.SERVER_PORT, () => {
-  console.log('Server Running');
+//handle error jika route tidak ditemukan
+app.get('/*splat', async (req, res, next) => {
+  return res.status(400).json({
+		message: "Route not found",
+		data: null
+	});
 });
+
+//global error handling untuk tiap service
+app.use((err, req, res, next) => {
+	console.error("Terjadi error", err.stack || err)
+
+	return res.status(err.status || 500).json({
+		message: "Terjadi error",
+		data: err.message || "internal server error"
+	})
+})
+
+app.listen(process.env.SERVER_PORT, () => {console.log('Server Running')});
