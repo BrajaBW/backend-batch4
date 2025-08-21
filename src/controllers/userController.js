@@ -8,9 +8,10 @@ const prisma = new PrismaClient();
 
 exports.getUser = (req, res, next) => {
   const user1 = {
-    nama: 'Faizul',
-    asal: 'Sumbawa',
+    nama: 'BRAJA BUANA WIDODO',
+    asal: 'BANDUNG',
     pekerjaan: 'Software Developer',
+    makanankesukan:'bala bala'
   };
 
   res.send(user1);
